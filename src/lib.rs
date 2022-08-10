@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use termion::{clear, cursor, terminal_size};
-use unicode_width::UnicodeWidthStr;
+use textwrap::wrap;
 
 /// Erase the last output from the terminal.
 #[derive(Debug)]
@@ -12,20 +12,9 @@ impl Display for Erase<'_> {
         let line = self
             .0
             .split('\n')
-            .map(|l| {
-                let l = l.width_cjk();
-                if l == 0 {
-                    1
-                } else {
-                    l / (x as usize) + if l % x as usize == 0 as usize { 0 } else { 1 }
-                }
-            })
+            .map(|l| wrap(l, textwrap::Options::new(x as usize).break_words(true)).len())
             .sum::<usize>() as u16
             - 1;
-        if line == 0 {
-            write!(f, "\r{}", clear::AfterCursor)
-        } else {
-            write!(f, "\r{}{}", cursor::Up(line), clear::AfterCursor)
-        }
+        write!(f, "\r{}{}", cursor::Up(line), clear::AfterCursor)
     }
 }
